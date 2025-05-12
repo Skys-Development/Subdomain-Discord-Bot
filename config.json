@@ -1,14 +1,14 @@
 {
-  "token": "MTM3MTEyNjA1NTg2MzA2MjU5OA.GM_3RW.fTTidGD-2zrMUuaX-0u8oHAOH-cWdwBKif0oag",
-  "clientId": "1371126055863062598",
-  "logChannelId": "1371446511300251698",
-  "requiredDnsRoleId": "1371592991386632243",
+  "token": "",
+  "clientId": "",
+  "logChannelId": "",
+  "requiredDnsRoleId": "",
   "owners": [
-    "1342676516353343513",
-    "1283173237009809529"
+    "",
+    ""
   ],
-  "cloudflareToken": "1RCjOekt7fJyZovfdHXLp-hoN6N3ua7ECbGbSBFg",
-  "zoneId": "6a0d29909f11f211d80705d2146f42f8",
-  "rootDomain": "skullstudios.xyz",
+  "cloudflareToken": "",
+  "zoneId": "",
+  "rootDomain": "",
   "dnsLocked": false
 }
