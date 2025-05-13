@@ -24,11 +24,11 @@ module.exports = {
     const ip = interaction.options.getString('ip');
     const port = interaction.options.getInteger('port');
     const fqdn = `${subdomain}.${config.rootDomain}`;
+    const target = `${subdomain}.${config.rootDomain}`;
 
     await interaction.reply({ content: `⏳ Creating A + SRV records for \`${fqdn}\`...`, ephemeral: true });
 
     try {
-      // 1. Create A Record
       const aRecordRes = await axios.post(
         `https://api.cloudflare.com/client/v4/zones/${config.zoneId}/dns_records`,
         {
@@ -47,23 +47,22 @@ module.exports = {
       );
 
       if (!aRecordRes.data.success) {
-        return interaction.editReply({ content: `❌ Failed to create A record: ${JSON.stringify(aRecordRes.data.errors)}` });
+        return interaction.editReply({ content: `❌ Failed to create A record:\n\`\`\`json\n${JSON.stringify(aRecordRes.data.errors, null, 2)}\n\`\`\`` });
       }
 
-      // 2. Create SRV Record
-      const srvName = `_minecraft._tcp.${subdomain}`;
       const srvRecordRes = await axios.post(
         `https://api.cloudflare.com/client/v4/zones/${config.zoneId}/dns_records`,
         {
           type: 'SRV',
+          name: `_minecraft._tcp.${fqdn}`,
           data: {
             service: '_minecraft',
             proto: '_tcp',
             name: subdomain,
             priority: 0,
-            weight: 5,
+            weight: 0,
             port: port,
-            target: fqdn
+            target: target,
           },
           ttl: 1
         },
@@ -76,15 +75,19 @@ module.exports = {
       );
 
       if (!srvRecordRes.data.success) {
-        return interaction.editReply({ content: `⚠️ A record created, but failed to create SRV record: ${JSON.stringify(srvRecordRes.data.errors)}` });
+        return interaction.editReply({ content: `⚠️ A record created, but failed to create SRV record:\n\`\`\`json\n${JSON.stringify(srvRecordRes.data.errors, null, 2)}\n\`\`\`` });
       }
 
       await interaction.editReply({
-        content: `✅ Subdomain \`${fqdn}\` created!\n\n🔹 A Record → \`${ip}\`\n🔹 SRV Record → \`_minecraft._tcp.${fqdn}:${port}\``
+        content: `✅ Subdomain \`${fqdn}\` created!\n\n🔹 **A Record** → \`${ip}\`\n🔹 **SRV Record** → \`_minecraft._tcp.${fqdn}:${port}\``
       });
 
     } catch (error) {
-      await interaction.editReply({ content: `❌ Error: ${error.message}` });
+      const errorMessage = error.response?.data?.errors
+        ? JSON.stringify(error.response.data.errors, null, 2)
+        : error.message;
+
+      await interaction.editReply({ content: `❌ Error:\n\`\`\`json\n${errorMessage}\n\`\`\`` });
     }
   },
 };
