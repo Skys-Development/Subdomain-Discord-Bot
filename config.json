@@ -7,8 +7,17 @@
     "",
     ""
   ],
-  "cloudflareToken": "",
-  "zoneId": "",
-  "rootDomain": "",
-  "dnsLocked": false
+  "dnsLocked": false,
+  "domains": [
+    {
+      "name": "",
+      "zoneId": "",
+      "cloudflareToken": ""
+    },
+    {
+      "name": "",
+      "zoneId": "",
+      "cloudflareToken": ""
+    }
+  ]
 }
