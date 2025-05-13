@@ -1,23 +1,27 @@
 {
-  "token": "",
-  "clientId": "",
-  "logChannelId": "",
-  "requiredDnsRoleId": "",
+  "token": "MTM3MTk4MTY4MzYzMjYzNjA2NA.GSRCfK.mG2aXuZLTjwNWXFpGpdJkHZiJuAGMXq1ZtIiJI",
+  "clientId": "1371981683632636064",
+  "logChannelId": "1364388468867727482",
+  "requiredDnsRoleId": "1371986127619100843",
   "owners": [
-    "",
-    ""
+    "1342676516353343513"
   ],
   "dnsLocked": false,
   "domains": [
     {
-      "name": "",
-      "zoneId": "",
-      "cloudflareToken": ""
+      "name": "mojosmp.dpdns.org",
+      "zoneId": "5c63a22624379d844376d864412f2b66",
+      "cloudflareToken": "L2fCBXDSX-MCknTNWkl5W16BwYL3YblgkVswzeQ5"
     },
     {
-      "name": "",
-      "zoneId": "",
-      "cloudflareToken": ""
+      "name": "revisewn.dpdns.org",
+      "zoneId": "0bd457000301429e62079e99b8ec88e2",
+      "cloudflareToken": "L2fCBXDSX-MCknTNWkl5W16BwYL3YblgkVswzeQ5"
+    },
+{
+      "name": "xplay.dpdns.org",
+      "zoneId": "e5e69a6e322589026eee0f99f1d0645b",
+      "cloudflareToken": "L2fCBXDSX-MCknTNWkl5W16BwYL3YblgkVswzeQ5"
     }
   ]
 }
