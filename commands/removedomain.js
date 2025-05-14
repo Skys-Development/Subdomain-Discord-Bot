@@ -1,227 +1,91 @@
+const fs = require('fs');
+const path = require('path');
 const {
   SlashCommandBuilder,
   ActionRowBuilder,
-  StringSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
   ComponentType
 } = require('discord.js');
-const https = require('https');
-const fs = require('fs');
-const path = require('path');
-
-// Load config
-function getConfig() {
-  return JSON.parse(fs.readFileSync(path.resolve(__dirname, '../config.json'), 'utf8'));
-}
-
-function fetchDNSRecordsForDomain(domain) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.cloudflare.com',
-      path: `/client/v4/zones/${domain.zoneId}/dns_records`,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${domain.cloudflareToken}`,
-        'Content-Type': 'application/json'
-      }
-    };
-
-    const req = https.request(options, res => {
-      let data = '';
-      res.on('data', chunk => (data += chunk));
-      res.on('end', () => {
-        const json = JSON.parse(data);
-        if (json.success) {
-          const records = json.result.map(r => ({ ...r, _domain: domain }));
-          resolve(records);
-        } else {
-          reject(json.errors);
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.end();
-  });
-}
-
-function deleteDNSRecord(domain, recordId) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.cloudflare.com',
-      path: `/client/v4/zones/${domain.zoneId}/dns_records/${recordId}`,
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${domain.cloudflareToken}`,
-        'Content-Type': 'application/json'
-      }
-    };
-
-    const req = https.request(options, res => {
-      let data = '';
-      res.on('data', chunk => (data += chunk));
-      res.on('end', () => {
-        const json = JSON.parse(data);
-        if (json.success) resolve(json.result);
-        else reject(json.errors);
-      });
-    });
-
-    req.on('error', reject);
-    req.end();
-  });
-}
+const config = require('../../config.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('removedomain')
-    .setDescription('Remove a DNS record from a specific domain (owners only).'),
+    .setDescription('Remove a domain from the domain list')
+    .addStringOption(option =>
+      option.setName('domain')
+        .setDescription('Select the domain to remove')
+        .setRequired(true)
+        .addChoices(
+          ...config.domains.map(d => ({ name: d.name, value: d.name }))
+        )
+    ),
 
   async execute(interaction) {
-    const config = getConfig();
+    const domainToRemove = interaction.options.getString('domain');
 
     if (!config.owners.includes(interaction.user.id)) {
       return interaction.reply({
-        content: '❌ You are not authorized to use this command.',
-        flags: 64
+        content: '❌ Only bot owners can remove domains.',
+        ephemeral: true
       });
     }
 
-    // Step 1: Ask for domain
-    const domainOptions = config.domains.map(d => ({
-      label: d.name,
-      value: d.name
-    }));
+    const domain = config.domains.find(d => d.name === domainToRemove);
+    if (!domain) {
+      return interaction.reply({
+        content: '❌ Domain not found.',
+        ephemeral: true
+      });
+    }
 
-    const domainSelect = new ActionRowBuilder().addComponents(
-      new StringSelectMenuBuilder()
-        .setCustomId('choose-domain')
-        .setPlaceholder('Choose a domain')
-        .addOptions(domainOptions)
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId('confirm_remove')
+        .setLabel('Yes, remove it')
+        .setStyle(ButtonStyle.Danger),
+      new ButtonBuilder()
+        .setCustomId('cancel_remove')
+        .setLabel('Cancel')
+        .setStyle(ButtonStyle.Secondary)
     );
 
     await interaction.reply({
-      content: '🌐 Select the domain you want to manage:',
-      components: [domainSelect],
-      flags: 64
+      content: `⚠️ Are you sure you want to remove \`${domainToRemove}\` from config?`,
+      components: [row],
+      ephemeral: true
     });
 
-    const domainCollector = interaction.channel.createMessageComponentCollector({
-      filter: i => i.user.id === interaction.user.id && i.customId === 'choose-domain',
-      componentType: ComponentType.StringSelect,
-      time: 20000,
-      max: 1
-    });
+    const confirmation = await interaction.channel.awaitMessageComponent({
+      componentType: ComponentType.Button,
+      time: 15000,
+      filter: i => i.user.id === interaction.user.id
+    }).catch(() => null);
 
-    domainCollector.on('collect', async domainSelectInteraction => {
-      const selectedDomainName = domainSelectInteraction.values[0];
-      const selectedDomain = config.domains.find(d => d.name === selectedDomainName);
-
-      if (!selectedDomain) {
-        return domainSelectInteraction.update({
-          content: '❌ Domain not found.',
-          components: []
-        });
-      }
-
-      let records;
-      try {
-        records = await fetchDNSRecordsForDomain(selectedDomain);
-      } catch (err) {
-        return domainSelectInteraction.update({
-          content: `❌ Failed to fetch DNS records for ${selectedDomain.name}`,
-          components: []
-        });
-      }
-
-      if (!records.length) {
-        return domainSelectInteraction.update({
-          content: `❌ No DNS records found for ${selectedDomain.name}`,
-          components: []
-        });
-      }
-
-      const recordSelect = new ActionRowBuilder().addComponents(
-        new StringSelectMenuBuilder()
-          .setCustomId('choose-record')
-          .setPlaceholder('Select a DNS record to delete')
-          .addOptions(
-            records.slice(0, 25).map(r => ({
-              label: `${r.name} (${r.type})`,
-              value: r.id
-            }))
-          )
-      );
-
-      await domainSelectInteraction.update({
-        content: `📄 Select a DNS record from **${selectedDomain.name}** to delete:`,
-        components: [recordSelect]
+    if (!confirmation) {
+      return interaction.editReply({
+        content: '⏱️ Confirmation timed out.',
+        components: []
       });
+    }
 
-      const recordCollector = interaction.channel.createMessageComponentCollector({
-        filter: i => i.user.id === interaction.user.id && i.customId === 'choose-record',
-        componentType: ComponentType.StringSelect,
-        time: 20000,
-        max: 1
+    if (confirmation.customId === 'cancel_remove') {
+      return confirmation.update({
+        content: '❌ Domain removal cancelled.',
+        components: []
       });
+    }
 
-      recordCollector.on('collect', async recordSelectInteraction => {
-        const recordId = recordSelectInteraction.values[0];
-        const record = records.find(r => r.id === recordId);
+    config.domains = config.domains.filter(d => d.name !== domainToRemove);
+    fs.writeFileSync(
+      path.join(__dirname, '../../config.json'),
+      JSON.stringify(config, null, 2)
+    );
 
-        if (!record) {
-          return recordSelectInteraction.update({
-            content: '❌ Record not found.',
-            components: []
-          });
-        }
-
-        const confirmRow = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId('confirm-delete')
-            .setLabel('✅ Confirm Deletion')
-            .setStyle(ButtonStyle.Danger),
-          new ButtonBuilder()
-            .setCustomId('cancel-delete')
-            .setLabel('❌ Cancel')
-            .setStyle(ButtonStyle.Secondary)
-        );
-
-        await recordSelectInteraction.update({
-          content: `⚠️ Are you sure you want to delete \`${record.name}\` (${record.type})?`,
-          components: [confirmRow]
-        });
-
-        const confirmCollector = interaction.channel.createMessageComponentCollector({
-          filter: i => i.user.id === interaction.user.id,
-          componentType: ComponentType.Button,
-          time: 15000,
-          max: 1
-        });
-
-        confirmCollector.on('collect', async confirmInteraction => {
-          if (confirmInteraction.customId === 'confirm-delete') {
-            try {
-              await deleteDNSRecord(selectedDomain, recordId);
-              await confirmInteraction.update({
-                content: `✅ \`${record.name}\` was deleted successfully.`,
-                components: []
-              });
-            } catch (err) {
-              await confirmInteraction.update({
-                content: `❌ Failed to delete record: ${err[0]?.message || 'Unknown error'}`,
-                components: []
-              });
-            }
-          } else {
-            await confirmInteraction.update({
-              content: `❌ Deletion cancelled.`,
-              components: []
-            });
-          }
-        });
-      });
+    confirmation.update({
+      content: `✅ Domain \`${domainToRemove}\` has been removed.`,
+      components: []
     });
   }
 };
