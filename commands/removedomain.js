@@ -7,7 +7,9 @@ const {
   ButtonStyle,
   ComponentType
 } = require('discord.js');
-const config = require('../../config.json');
+
+const configPath = path.join(__dirname, '..', 'config.json');
+let config = require(configPath);
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -77,13 +79,13 @@ module.exports = {
       });
     }
 
+    // Remove the domain
     config.domains = config.domains.filter(d => d.name !== domainToRemove);
-    fs.writeFileSync(
-      path.join(__dirname, '../../config.json'),
-      JSON.stringify(config, null, 2)
-    );
 
-    confirmation.update({
+    // Write the updated config back to the file
+    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+
+    return confirmation.update({
       content: `✅ Domain \`${domainToRemove}\` has been removed.`,
       components: []
     });
