@@ -1,12 +1,9 @@
 {
-  "token": "",
-  "clientId": "",
-  "logChannelId": "",
-  "requiredDnsRoleId": "",
+  "token": "MTM5MjY1NjQwMDAwNTcyNjMwOQ.GS7y8b.k6b4101AbUqq_PmZ_TtDqRlhcCYSldR-UxBLo0",
+  "clientId": "1392656400005726309",
   "owners": [
     "1342676516353343513"
   ],
-  "dnsLocked": false,
   "domains": [
     {
       "name": "skys.qzz.io",
