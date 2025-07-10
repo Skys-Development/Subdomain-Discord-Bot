@@ -49,28 +49,6 @@ client.on('interactionCreate', async interaction => {
 
   try {
     await command.execute(interaction);
-
-    // Create a command usage log embed
-    const embed = new EmbedBuilder()
-      .setTitle(`🧩 Command Used: </${interaction.commandName}:0>`)
-      .addFields(
-        { name: 'User', value: `${interaction.user.tag} (${interaction.user.id})`, inline: true },
-        { name: 'Channel', value: `<#${interaction.channel.id}>`, inline: true },
-        {
-          name: 'Inputs',
-          value: interaction.options.data.length
-            ? interaction.options.data.map(opt => `**${opt.name}**: ${opt.value}`).join('\n')
-            : 'No options'
-        }
-      )
-      .setTimestamp()
-      .setColor(0x00b0f4);
-
-    // Send embed to the log channel
-    const logChannel = await client.channels.fetch(config.logChannelId);
-    if (logChannel && logChannel.isTextBased()) {
-      await logChannel.send({ embeds: [embed] });
-    }
   } catch (error) {
     console.error(error);
     await interaction.reply({
