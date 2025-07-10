@@ -1,14 +1,14 @@
 {
-  "token": "MTM5MjY1NjQwMDAwNTcyNjMwOQ.GS7y8b.k6b4101AbUqq_PmZ_TtDqRlhcCYSldR-UxBLo0",
-  "clientId": "1392656400005726309",
+  "token": "",
+  "clientId": "",
   "owners": [
-    "1342676516353343513"
+    ""
   ],
   "domains": [
     {
-      "name": "skys.qzz.io",
-      "zoneId": "b04044c1de8209eb91498e195af87bd2",
-      "cloudflareToken": "z5vsxTjltslAbEHZ4WdaVlWvjL0GWtyeUuw7pmR4"
+      "name": "",
+      "zoneId": "",
+      "cloudflareToken": ""
     }
   ]
 }
