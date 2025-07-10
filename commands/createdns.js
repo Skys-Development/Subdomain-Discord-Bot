@@ -2,7 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const config = require('../config.json'); // directly require your config
+const config = require('../config.json');
 
 const recordsFile = path.join(__dirname, '../records.json');
 
@@ -90,7 +90,7 @@ module.exports = {
           return interaction.editReply({ content: '❌ You must provide both IP and port for a Minecraft domain.' });
         }
 
-        // A record
+        // Create A record
         const aRes = await axios.post(
           `https://api.cloudflare.com/client/v4/zones/${domainConfig.zoneId}/dns_records`,
           {
@@ -112,7 +112,7 @@ module.exports = {
           return interaction.editReply({ content: `❌ Failed to create A record:\n\`\`\`json\n${JSON.stringify(aRes.data.errors, null, 2)}\n\`\`\`` });
         }
 
-        // SRV record
+        // Create SRV record
         const srvRes = await axios.post(
           `https://api.cloudflare.com/client/v4/zones/${domainConfig.zoneId}/dns_records`,
           {
@@ -141,8 +141,23 @@ module.exports = {
           return interaction.editReply({ content: `⚠️ A record created, but failed to create SRV record:\n\`\`\`json\n${JSON.stringify(srvRes.data.errors, null, 2)}\n\`\`\`` });
         }
 
-        // Save record
-        userRecords.push(fqdn);
+        // Save both records with details
+        userRecords.push(
+          {
+            id: aRes.data.result.id,
+            domain: domainConfig.name,
+            type: 'A',
+            name: fqdn,
+            content: ip
+          },
+          {
+            id: srvRes.data.result.id,
+            domain: domainConfig.name,
+            type: 'SRV',
+            name: `_minecraft._tcp.${fqdn}`,
+            content: JSON.stringify(srvRes.data.result.data) // or store as object if you want
+          }
+        );
         records[userId] = userRecords;
         saveRecords(records);
 
@@ -152,6 +167,9 @@ module.exports = {
 
       } else {
         const content = interaction.options.getString('content');
+        if (!content) {
+          return interaction.editReply({ content: '❌ Content is required for this record type.' });
+        }
         const proxied = interaction.options.getBoolean('proxied') ?? false;
 
         const response = await axios.post(
@@ -172,7 +190,13 @@ module.exports = {
         );
 
         if (response.data.success) {
-          userRecords.push(fqdn);
+          userRecords.push({
+            id: response.data.result.id,
+            domain: domainConfig.name,
+            type,
+            name: fqdn,
+            content
+          });
           records[userId] = userRecords;
           saveRecords(records);
 
