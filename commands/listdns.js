@@ -12,7 +12,7 @@ function loadRecords() {
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('listdns')
-    .setDescription('List all your DNS records created via the bot'),
+    .setDescription('List your DNS records.'),
 
   async execute(interaction) {
     const userId = interaction.user.id;
@@ -20,16 +20,15 @@ module.exports = {
     const userRecords = records[userId] || [];
 
     if (userRecords.length === 0) {
-      return interaction.reply({
-        content: `❌ You don't have any saved DNS records yet.`,
-        ephemeral: true
-      });
+      return interaction.reply({ content: '❌ You have no DNS records saved.', ephemeral: true });
     }
 
-    const list = userRecords.map((record, i) => `\`${i + 1}.\` ${record}`).join('\n');
+    const formatted = userRecords
+      .map((record, i) => `${i + 1}. \`${record}\``)
+      .join('\n');
 
-    return interaction.reply({
-      content: `✅ **Your DNS Records:**\n${list}`,
+    await interaction.reply({
+      content: `✅ **Your DNS Records:**\n${formatted}`,
       ephemeral: true
     });
   }
